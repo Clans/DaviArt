@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">DaviArt</string>
+    <string name="navigation_drawer_open">Menu open</string>
+    <string name="navigation_drawer_close">Menu close</string>
 </resources>

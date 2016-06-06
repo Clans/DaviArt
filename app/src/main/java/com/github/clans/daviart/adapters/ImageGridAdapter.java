@@ -1,7 +1,13 @@
 package com.github.clans.daviart.adapters;
 
 import android.content.Context;
+import android.graphics.drawable.ColorDrawable;
+import android.graphics.drawable.StateListDrawable;
+import android.support.graphics.drawable.VectorDrawableCompat;
+import android.support.v4.content.ContextCompat;
+import android.support.v4.graphics.ColorUtils;
 import android.support.v7.graphics.Palette;
+import android.support.v7.widget.CardView;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -20,30 +26,40 @@ import com.github.clans.daviart.glide.PaletteBitmap;
 import com.github.clans.daviart.glide.PaletteBitmapTranscoder;
 import com.github.clans.daviart.models.Art;
 import com.github.clans.daviart.models.Thumb;
+import com.github.clans.daviart.util.RippleApplier;
+import com.github.clans.daviart.util.Utils;
 
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
 import rx.Observable;
 import rx.functions.Action1;
 import rx.observables.MathObservable;
+import timber.log.Timber;
 
 public class ImageGridAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
-    public static final int TYPE_ITEM = 0;
-    public static final int TYPE_PROGRESS = 1;
+    private static final int TYPE_ITEM = 0;
+    private static final int TYPE_PROGRESS = 1;
 
     private final BitmapRequestBuilder<String, PaletteBitmap> glideRequest;
 
     private Context context;
-    private List<Art> arts;
+    private List<Art> arts = new ArrayList<>();
+    private boolean hasMore;
+    private final int columns;
 
-    public ImageGridAdapter(Context context) {
+    public ImageGridAdapter(Context context, int columns) {
         this.context = context;
+        this.columns = columns;
+        VectorDrawableCompat placeholder = VectorDrawableCompat.create(context.getResources(),
+                R.drawable.image_placeholder, context.getTheme());
         this.glideRequest = Glide.with(context)
                 .fromString()
                 .asBitmap()
                 .transcode(new PaletteBitmapTranscoder(context), PaletteBitmap.class)
+                .placeholder(placeholder)
                 .animate(android.R.anim.fade_in)
                 .centerCrop()
                 .diskCacheStrategy(DiskCacheStrategy.ALL);
@@ -62,6 +78,14 @@ public class ImageGridAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
             captionBackground = (LinearLayout) itemView.findViewById(R.id.captionBackground);
             title = (TextView) itemView.findViewById(R.id.title);
             category = (TextView) itemView.findViewById(R.id.category);
+
+            itemView.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    int position = getAdapterPosition();
+                    Timber.d("Position: %s", position);
+                }
+            });
         }
     }
 
@@ -104,7 +128,7 @@ public class ImageGridAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
                     @Override
                     public void onResourceReady(PaletteBitmap resource, GlideAnimation<? super PaletteBitmap> glideAnimation) {
                         super.onResourceReady(resource, glideAnimation);
-                        Palette palette = resource.palette;
+                        final Palette palette = resource.palette;
                         List<Palette.Swatch> swatches = palette.getSwatches();
 
                         MathObservable.from(Observable.from(swatches))
@@ -123,6 +147,15 @@ public class ImageGridAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
                                     @Override
                                     public void call(Palette.Swatch swatch) {
                                         int rgb = swatch.getRgb();
+                                        if (Utils.hasLollipop()) {
+                                            RippleApplier.setRipple(swatch, (CardView) vhi.itemView);
+                                        } else {
+                                            int color = ColorUtils.setAlphaComponent(rgb, 0x40);
+                                            StateListDrawable drawable = new StateListDrawable();
+                                            drawable.addState(new int[]{android.R.attr.state_pressed},
+                                                    new ColorDrawable(color));
+                                            ((CardView) vhi.itemView).setForeground(drawable);
+                                        }
                                         vhi.title.setTextColor(swatch.getBodyTextColor());
                                         vhi.category.setTextColor(swatch.getBodyTextColor());
                                         vhi.captionBackground.setBackgroundColor(rgb);
@@ -147,7 +180,7 @@ public class ImageGridAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
 
     @Override
     public int getItemCount() {
-        return arts != null ? arts.size() + 1 : 0;
+        return arts != null ? arts.size() + (hasMore ? 1 : 0) : 0;
     }
 
     @Override
@@ -159,7 +192,20 @@ public class ImageGridAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
     }
 
     public void setItems(List<Art> arts) {
-        this.arts = arts;
+        this.arts.addAll(arts);
         notifyDataSetChanged();
+    }
+
+    public void setHasMore(boolean hasMore) {
+        this.hasMore = hasMore;
+    }
+
+    public int getItemColumnSpan(int position) {
+        switch (getItemViewType(position)) {
+            case TYPE_PROGRESS:
+                return columns;
+            default:
+                return 1;
+        }
     }
 }

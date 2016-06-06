@@ -6,4 +6,6 @@
     <color name="windowBackground">#202E44</color>
     <color name="white">#FFFFFF</color>
     <color name="gray">#CCCCCC</color>
+    <color name="whiteAlpha20">#33FFFFFF</color>
+    <color name="transparent">#00000000</color>
 </resources>

@@ -57,14 +57,15 @@ public class DeviantArtApi {
 
         @GET(ENDPOINT + "browse/newest?mature_content=false&limit=20")
         rx.Observable<NewestArts> getNewestByCategory(@Query("category_path") String category,
-                                                      @Query("access_token") String accessToken);
+                                                      @Query("access_token") String accessToken,
+                                                      @Query("offset") int offset);
     }
 
     public rx.Observable<Credentials> getAccessToken() {
         return service.getAccessToken(CLIENT_ID, CLIENT_SECRET);
     }
 
-    public rx.Observable<NewestArts> getNewestArts(String category, String accessToken) {
-        return service.getNewestByCategory(TextUtils.isEmpty(category) ? "/" : category, accessToken);
+    public rx.Observable<NewestArts> getNewestArts(String category, String accessToken, int offset) {
+        return service.getNewestByCategory(TextUtils.isEmpty(category) ? "/" : category, accessToken, offset);
     }
 }
