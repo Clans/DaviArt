@@ -2,6 +2,7 @@ package com.github.clans.daviart.api;
 
 import android.text.TextUtils;
 
+import com.github.clans.daviart.models.CategoryTree;
 import com.github.clans.daviart.models.Credentials;
 import com.github.clans.daviart.models.NewestArts;
 
@@ -55,17 +56,31 @@ public class DeviantArtApi {
         @GET(AUTHENTICATION + "/token?grant_type=client_credentials")
         rx.Observable<Credentials> getAccessToken(@Query("client_id") int clientId, @Query("client_secret") String clientSecret);
 
-        @GET(ENDPOINT + "browse/newest?mature_content=false&limit=20")
+        @GET(ENDPOINT + "browse/newest")
         rx.Observable<NewestArts> getNewestByCategory(@Query("category_path") String category,
                                                       @Query("access_token") String accessToken,
-                                                      @Query("offset") int offset);
+                                                      @Query("limit") int limit,
+                                                      @Query("offset") int offset,
+                                                      @Query("mature_content") boolean showMatureContent);
+
+        @GET(ENDPOINT + "browse/categorytree")
+        rx.Observable<CategoryTree> getCategoryTree(@Query("catpath") String catPath,
+                                                    @Query("mature_content") boolean showMatureContent,
+                                                    @Query("access_token") String accessToken);
     }
 
     public rx.Observable<Credentials> getAccessToken() {
         return service.getAccessToken(CLIENT_ID, CLIENT_SECRET);
     }
 
-    public rx.Observable<NewestArts> getNewestArts(String category, String accessToken, int offset) {
-        return service.getNewestByCategory(TextUtils.isEmpty(category) ? "/" : category, accessToken, offset);
+    public rx.Observable<NewestArts> getNewestArts(String category, String accessToken, int limit,
+                                                   int offset, boolean showMatureContent) {
+        return service.getNewestByCategory(TextUtils.isEmpty(category) ? "/" : category, accessToken,
+                limit, offset, showMatureContent);
+    }
+
+    public rx.Observable<CategoryTree> getCategoryTree(String catPath, boolean showMatureContent,
+                                                       String accessToken) {
+        return service.getCategoryTree(catPath, showMatureContent, accessToken);
     }
 }

@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:gravity="center_vertical"
+    android:minHeight="48dp"
+    tools:ignore="UseCompoundDrawables">
+
+    <FrameLayout
+        android:id="@+id/arrow_layout"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:background="@drawable/rectangle_selector">
+
+        <ImageView
+            android:id="@+id/arrow"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:padding="8dp"
+            app:srcCompat="@drawable/ic_arrow_right"
+            tools:ignore="ContentDescription" />
+
+        <ProgressBar
+            android:id="@+id/progress"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:padding="8dp"
+            android:visibility="gone" />
+
+    </FrameLayout>
+
+    <TextView
+        android:id="@+id/title"
+        style="@style/NavigationItem"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center_vertical"
+        android:paddingLeft="@dimen/navigation_margin_horizontal"
+        android:paddingRight="@dimen/navigation_margin_horizontal"
+        tools:text="Animals, Plants &amp; Nature" />
+
+</LinearLayout>

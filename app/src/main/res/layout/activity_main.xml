@@ -9,12 +9,12 @@
 
     <include layout="@layout/include_home_layout" />
 
-    <FrameLayout
-        android:layout_width="match_parent"
+    <fragment
+        android:id="@+id/navigation"
+        android:layout_width="@dimen/navigation_width"
         android:layout_height="match_parent"
         android:layout_gravity="start"
-        android:background="@color/gray">
-
-    </FrameLayout>
+        class="com.github.clans.daviart.fragments.NavigationFragment"
+        tools:layout="@layout/fragment_navigation" />
 
 </android.support.v4.widget.DrawerLayout>

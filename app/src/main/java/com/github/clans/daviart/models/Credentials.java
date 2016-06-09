@@ -17,6 +17,7 @@ public class Credentials {
     @SerializedName("status")
     @Expose
     private String status;
+    private long timestamp;
 
     public String getAccessToken() {
         return accessToken;
@@ -32,5 +33,13 @@ public class Credentials {
 
     public String getTokenType() {
         return tokenType;
+    }
+
+    public long getTimestamp() {
+        return timestamp;
+    }
+
+    public void setTimestamp(long timestamp) {
+        this.timestamp = timestamp;
     }
 }

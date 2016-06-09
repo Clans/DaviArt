@@ -7,7 +7,7 @@
     android:orientation="vertical"
     app:cardBackgroundColor="@color/colorPrimary"
     app:cardCornerRadius="0dp"
-    android:foreground="@drawable/grid_selector">
+    android:foreground="@drawable/borderless_selector">
 
     <LinearLayout
         android:layout_width="match_parent"

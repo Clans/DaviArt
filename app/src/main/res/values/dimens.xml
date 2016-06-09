@@ -1,14 +1,15 @@
 <resources>
-    <dimen name="activity_horizontal_margin">16dp</dimen>
-    <dimen name="activity_vertical_margin">16dp</dimen>
+    <dimen name="text_size_tiny">12sp</dimen>
+    <dimen name="text_size_small">14sp</dimen>
+    <dimen name="text_size_medium">18sp</dimen>
+    <dimen name="text_size_large">22sp</dimen>
 
-    <dimen name="textSizeTiny">12sp</dimen>
-    <dimen name="textSizeSmall">14sp</dimen>
-    <dimen name="textSizeMedium">18sp</dimen>
-    <dimen name="textSizeLarge">22sp</dimen>
-
-    <dimen name="gridItemSpacing">4dp</dimen>
-    <dimen name="statusBarHeight">24dp</dimen>
+    <dimen name="grid_item_spacing">4dp</dimen>
+    <dimen name="status_bar_height">0dp</dimen>
 
     <integer name="num_columns">2</integer>
+
+    <dimen name="navigation_width">280dp</dimen>
+    <dimen name="navigation_margin_horizontal">16dp</dimen>
+    <dimen name="subcategory_indention">16dp</dimen>
 </resources>

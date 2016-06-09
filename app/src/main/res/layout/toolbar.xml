@@ -7,6 +7,6 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:minHeight="?attr/actionBarSize"
-    android:paddingTop="@dimen/statusBarHeight"
+    android:paddingTop="@dimen/status_bar_height"
     app:layout_scrollFlags="scroll|enterAlways|snap"
     tools:showIn="@layout/activity_main" />

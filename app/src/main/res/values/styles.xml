@@ -27,8 +27,14 @@
 
     <style name="Caption.Title">
         <item name="android:textStyle">bold</item>
-        <item name="android:textSize">@dimen/textSizeSmall</item>
+        <item name="android:textSize">@dimen/text_size_small</item>
         <item name="android:textColor">?android:textColorPrimary</item>
+    </style>
+
+    <style name="NavigationItem">
+        <item name="android:textColor">@color/whiteAlpha87</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:background">@drawable/rectangle_selector</item>
     </style>
 
 </resources>

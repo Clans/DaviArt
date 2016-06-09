@@ -1,24 +1,28 @@
 package com.github.clans.daviart.activities;
 
 import android.annotation.SuppressLint;
-import android.os.Build;
 import android.os.Bundle;
 import android.support.design.widget.AppBarLayout;
+import android.support.v4.app.Fragment;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
+import android.text.TextUtils;
 import android.view.View;
-import android.view.ViewGroup;
 import android.view.WindowInsets;
 import android.widget.LinearLayout;
 
 import com.github.clans.daviart.BaseActivity;
+import com.github.clans.daviart.Intents;
+import com.github.clans.daviart.PreferenceHelper;
 import com.github.clans.daviart.R;
 import com.github.clans.daviart.adapters.ImageGridAdapter;
 import com.github.clans.daviart.api.DeviantArtApi;
+import com.github.clans.daviart.fragments.NavigationFragment;
 import com.github.clans.daviart.models.Art;
 import com.github.clans.daviart.models.Credentials;
 import com.github.clans.daviart.models.NewestArts;
@@ -26,6 +30,7 @@ import com.github.clans.daviart.util.EndlessRecyclerViewScrollListener;
 import com.github.clans.daviart.util.ObserverImpl;
 import com.github.clans.daviart.util.SpacingItemDecoration;
 import com.github.clans.daviart.util.Utils;
+import com.google.gson.Gson;
 
 import java.util.List;
 
@@ -34,6 +39,7 @@ import rx.Subscription;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.functions.Func1;
 import rx.schedulers.Schedulers;
+import rx.schedulers.Timestamped;
 import rx.subscriptions.CompositeSubscription;
 import timber.log.Timber;
 
@@ -47,6 +53,7 @@ public class MainActivity extends BaseActivity {
     private DrawerLayout drawerLayout;
     private AppBarLayout appBar;
     private int numColumns;
+    private Gson gson = new Gson();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -82,7 +89,12 @@ public class MainActivity extends BaseActivity {
                             recyclerView.getPaddingBottom() + insets.getSystemWindowInsetBottom()
                     );
 
-
+                    NavigationFragment navFragment = (NavigationFragment)
+                            getSupportFragmentManager().findFragmentById(R.id.navigation);
+                    if (navFragment != null) {
+                        navFragment.setNavigationViewInsets(insets.getSystemWindowInsetTop(),
+                                insets.getSystemWindowInsetBottom());
+                    }
 
                     // clear this listener so insets aren't re-applied
                     drawerLayout.setOnApplyWindowInsetsListener(null);
@@ -99,7 +111,7 @@ public class MainActivity extends BaseActivity {
     }
 
     private void setupRecyclerView() {
-        int spacing = getResources().getDimensionPixelSize(R.dimen.gridItemSpacing);
+        int spacing = getResources().getDimensionPixelSize(R.dimen.grid_item_spacing);
         recyclerView.addItemDecoration(new SpacingItemDecoration(spacing, true));
         recyclerView.setHasFixedSize(true);
         adapter = new ImageGridAdapter(this, numColumns);
@@ -134,13 +146,27 @@ public class MainActivity extends BaseActivity {
     }
 
     private void loadData() {
-        Subscription subscription = requestAccessToken()
+        Subscription subscription = Observable.just(PreferenceHelper.getCredentials())
+                .timestamp()
+                .map(new Func1<Timestamped<String>, Credentials>() {
+                    @Override
+                    public Credentials call(Timestamped<String> stringTimestamped) {
+                        long millis = stringTimestamped.getTimestampMillis();
+                        String s = stringTimestamped.getValue();
+                        if (TextUtils.isEmpty(s)) return null;
+
+                        Credentials credentials = gson.fromJson(s, Credentials.class);
+                        return checkTokenNotExpired(credentials, millis) ? credentials : null;
+                    }
+                })
                 .flatMap(new Func1<Credentials, Observable<NewestArts>>() {
                     @Override
                     public Observable<NewestArts> call(Credentials credentials) {
-                        Timber.d("Access token: %s", credentials.getAccessToken());
-                        MainActivity.this.credentials = credentials;
-                        return getNewestArts(0);
+                        if (credentials != null) {
+                            MainActivity.this.credentials = credentials;
+                            return getNewestArts(0);
+                        }
+                        return getAccessTokenWithNewestArts();
                     }
                 })
                 .subscribeOn(Schedulers.io())
@@ -157,18 +183,40 @@ public class MainActivity extends BaseActivity {
         compositeSubscription.add(subscription);
     }
 
-    private rx.Observable<Credentials> requestAccessToken() {
-        return DeviantArtApi.getInstance().getAccessToken();
+    private rx.Observable<NewestArts> getAccessTokenWithNewestArts() {
+        return DeviantArtApi.getInstance().getAccessToken()
+                .timestamp()
+                .flatMap(new Func1<Timestamped<Credentials>, Observable<NewestArts>>() {
+                    @Override
+                    public Observable<NewestArts> call(Timestamped<Credentials> credentialsTimestamped) {
+                        long millis = credentialsTimestamped.getTimestampMillis();
+                        Credentials credentials = credentialsTimestamped.getValue();
+                        credentials.setTimestamp(millis);
+
+                        String credentialsStr = gson.toJson(credentials);
+                        PreferenceHelper.setCredentials(credentialsStr);
+                        MainActivity.this.credentials = credentials;
+                        return getNewestArts(0);
+                    }
+                });
     }
 
     private rx.Observable<NewestArts> getNewestArts(int offset) {
-        return DeviantArtApi.getInstance().getNewestArts("/photography/nature/", credentials.getAccessToken(), offset);
+        return DeviantArtApi.getInstance().getNewestArts("/photography/nature/", credentials.getAccessToken(),
+                20, offset, false);
+    }
+
+    private boolean checkTokenNotExpired(Credentials credentials, long currentMillis) {
+        long credentialsTimestamp = credentials.getTimestamp();
+        int expiresIn = credentials.getExpiresIn();
+        return currentMillis - credentialsTimestamp <= expiresIn;
     }
 
     private void updateUi() {
         List<Art> arts = newestArts.getArts();
         adapter.setHasMore(newestArts.hasMore());
         adapter.setItems(arts);
+        hideLoadingIndicator();
     }
 
     @Override

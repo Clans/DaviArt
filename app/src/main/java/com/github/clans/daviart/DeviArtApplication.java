@@ -13,5 +13,7 @@ public class DeviArtApplication extends Application {
         if (BuildConfig.DEBUG) {
             Timber.plant(new Timber.DebugTree());
         }
+
+        PreferenceHelper.init(this);
     }
 }
