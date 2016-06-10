@@ -134,6 +134,11 @@ public class ImageGridAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
                             final Palette palette = resource.palette;
                             List<Palette.Swatch> swatches = palette.getSwatches();
 
+                            if (swatches.size() == 0) {
+                                Timber.d("No swatches found");
+                                return;
+                            }
+
                             MathObservable.from(Observable.from(swatches))
                                     .max(new Comparator<Palette.Swatch>() {
                                         @Override

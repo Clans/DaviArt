@@ -32,6 +32,7 @@ public class NavigationAdapter extends RecyclerView.Adapter<NavigationAdapter.Vi
 
     private OnArrowClickListener onArrowClickListener;
     private OnItemClickListener onItemClickListener;
+    private int selectedPosition = RecyclerView.NO_POSITION;
 
     public interface OnArrowClickListener {
         void onArrowClick(ViewHolder holder, Category category);
@@ -70,7 +71,7 @@ public class NavigationAdapter extends RecyclerView.Adapter<NavigationAdapter.Vi
     }
 
     @Override
-    public void onBindViewHolder(final NavigationAdapter.ViewHolder holder, int position) {
+    public void onBindViewHolder(final NavigationAdapter.ViewHolder holder, final int position) {
         final Category category = categories.get(position);
         if (category != null) {
             RecyclerView.LayoutParams lp = (RecyclerView.LayoutParams) holder.itemView.getLayoutParams();
@@ -90,7 +91,7 @@ public class NavigationAdapter extends RecyclerView.Adapter<NavigationAdapter.Vi
                 public void onClick(View v) {
                     if (onArrowClickListener != null) {
                         if (!category.isExpanded()) {
-                            setSubcategoriesLoading(holder, category);
+                            prepareForLoadingSubcategories(holder, category);
                             onArrowClickListener.onArrowClick(holder, category);
                         } else {
                             collapse(category);
@@ -103,13 +104,18 @@ public class NavigationAdapter extends RecyclerView.Adapter<NavigationAdapter.Vi
                 @Override
                 public void onClick(View v) {
                     if (onItemClickListener != null) {
-                        setSubcategoriesLoading(holder, category);
+                        notifyItemChanged(selectedPosition); // update previously selected item
+                        selectedPosition = position;
+                        prepareForLoadingSubcategories(holder, category);
 
                         onItemClickListener.onItemClick(holder, category);
+                        notifyItemChanged(position); // update currently selected item
                     }
                 }
             });
         }
+
+        holder.itemView.setActivated(position == selectedPosition);
     }
 
     @Override
@@ -117,7 +123,7 @@ public class NavigationAdapter extends RecyclerView.Adapter<NavigationAdapter.Vi
         return categories.size();
     }
 
-    private void setSubcategoriesLoading(ViewHolder holder, Category category) {
+    private void prepareForLoadingSubcategories(ViewHolder holder, Category category) {
         if (expandedCategories.size() > 0) {
             collapse(category);
         }

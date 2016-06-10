@@ -32,7 +32,7 @@
     </style>
 
     <style name="NavigationItem">
-        <item name="android:textColor">@color/whiteAlpha87</item>
+        <item name="android:textColor">@color/text_selector</item>
         <item name="android:fontFamily">sans-serif-medium</item>
         <item name="android:background">@drawable/rectangle_selector</item>
     </style>

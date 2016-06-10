@@ -78,11 +78,19 @@ public class NavigationFragment extends BaseFragment {
     @Override
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
-        String credentialsStr = PreferenceHelper.getCredentials();
-        if (TextUtils.isEmpty(credentialsStr)) return;
+        if (getCredentialsFromPrefs()) {
+            loadData(null, "/");
+        }
+    }
 
-        credentials = gson.fromJson(credentialsStr, Credentials.class);
-        loadData(null, "/");
+    private boolean getCredentialsFromPrefs() {
+        String credentialsStr = PreferenceHelper.getCredentials();
+        if (!TextUtils.isEmpty(credentialsStr)) {
+            credentials = gson.fromJson(credentialsStr, Credentials.class);
+            return true;
+        }
+
+        return false;
     }
 
     private void loadData(final NavigationAdapter.ViewHolder holder, final String catPath) {
@@ -132,7 +140,9 @@ public class NavigationFragment extends BaseFragment {
     }
 
     public void loadCategories() {
-        loadData(null, "/");
+        if (getCredentialsFromPrefs()) {
+            loadData(null, "/");
+        }
     }
 
     @Override
