@@ -23,8 +23,6 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
-import timber.log.Timber;
-
 public class NavigationAdapter extends RecyclerView.Adapter<NavigationAdapter.ViewHolder> {
 
     private final ArrayList<Category> categories = new ArrayList<>();
@@ -40,7 +38,7 @@ public class NavigationAdapter extends RecyclerView.Adapter<NavigationAdapter.Vi
     }
 
     public interface OnItemClickListener {
-        void onItemClick(View view, int position);
+        void onItemClick(ViewHolder holder, Category category);
     }
 
     public NavigationAdapter(Context context) {
@@ -92,14 +90,7 @@ public class NavigationAdapter extends RecyclerView.Adapter<NavigationAdapter.Vi
                 public void onClick(View v) {
                     if (onArrowClickListener != null) {
                         if (!category.isExpanded()) {
-                            if (expandedCategories.size() > 0) {
-                                collapse(category);
-                            }
-
-                            toggleProgress(holder,  true);
-                            category.setExpanded(true);
-                            expandedCategories.addLast(category);
-                            holder.arrowLayout.setEnabled(false);
+                            setSubcategoriesLoading(holder, category);
                             onArrowClickListener.onArrowClick(holder, category);
                         } else {
                             collapse(category);
@@ -112,7 +103,9 @@ public class NavigationAdapter extends RecyclerView.Adapter<NavigationAdapter.Vi
                 @Override
                 public void onClick(View v) {
                     if (onItemClickListener != null) {
-                        onItemClickListener.onItemClick(holder.itemView, holder.getAdapterPosition());
+                        setSubcategoriesLoading(holder, category);
+
+                        onItemClickListener.onItemClick(holder, category);
                     }
                 }
             });
@@ -122,6 +115,17 @@ public class NavigationAdapter extends RecyclerView.Adapter<NavigationAdapter.Vi
     @Override
     public int getItemCount() {
         return categories.size();
+    }
+
+    private void setSubcategoriesLoading(ViewHolder holder, Category category) {
+        if (expandedCategories.size() > 0) {
+            collapse(category);
+        }
+
+        toggleProgress(holder,  true);
+        category.setExpanded(true);
+        expandedCategories.addLast(category);
+        holder.arrowLayout.setEnabled(false);
     }
 
     public void setItems(ViewHolder holder, List<Category> categories) {

@@ -13,15 +13,32 @@ public class BaseActivity extends AppCompatActivity {
         }
     }
 
-    protected void hideLoadingIndicator() {
-                View loading = findViewById(R.id.loading_indicator);
-                if (loading != null) {
-                    loading.setVisibility(View.GONE);
-                }
+    protected void showLoadingIndicator() {
+        View loading = findViewById(R.id.loading_indicator);
+        if (loading != null) {
+            loading.setVisibility(View.VISIBLE);
+        }
 
-                /*View empty = findViewById(R.id.empty);
-                if (empty != null) {
-                    empty.setVisibility(View.GONE);
-                }*/
+        View recyclerView = findViewById(R.id.recyclerView);
+        if (recyclerView != null) {
+            recyclerView.setVisibility(View.GONE);
+        }
+    }
+
+    protected void hideLoadingIndicator() {
+        View loading = findViewById(R.id.loading_indicator);
+        if (loading != null) {
+            loading.setVisibility(View.GONE);
+        }
+
+        View recyclerView = findViewById(R.id.recyclerView);
+        if (recyclerView != null) {
+            recyclerView.setVisibility(View.VISIBLE);
+        }
+
+        /*View empty = findViewById(R.id.empty);
+        if (empty != null) {
+            empty.setVisibility(View.GONE);
+        }*/
     }
 }

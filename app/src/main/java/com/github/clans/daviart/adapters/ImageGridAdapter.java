@@ -107,6 +107,8 @@ public class ImageGridAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
                 view = LayoutInflater.from(context).inflate(R.layout.load_more, parent, false);
                 return new ViewHolderProgress(view);
         }
+
+        // TODO: add viewType for Literature (text)
         return null;
     }
 
@@ -117,52 +119,56 @@ public class ImageGridAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
             if (art != null) {
                 final ViewHolderItem vhi = (ViewHolderItem) holder;
                 List<Thumb> thumbs = art.getThumbs();
-                Thumb thumb = thumbs.get(thumbs.size() - 1);
+                if (thumbs.size() > 0) {
+                    Thumb thumb = thumbs.get(thumbs.size() - 1);
 
-                glideRequest.load(thumb.getSrc()).into(new ImageViewTarget<PaletteBitmap>(vhi.image) {
-                    @Override
-                    protected void setResource(PaletteBitmap resource) {
-                        super.view.setImageBitmap(resource.bitmap);
-                    }
+                    glideRequest.load(thumb.getSrc()).into(new ImageViewTarget<PaletteBitmap>(vhi.image) {
+                        @Override
+                        protected void setResource(PaletteBitmap resource) {
+                            super.view.setImageBitmap(resource.bitmap);
+                        }
 
-                    @Override
-                    public void onResourceReady(PaletteBitmap resource, GlideAnimation<? super PaletteBitmap> glideAnimation) {
-                        super.onResourceReady(resource, glideAnimation);
-                        final Palette palette = resource.palette;
-                        List<Palette.Swatch> swatches = palette.getSwatches();
+                        @Override
+                        public void onResourceReady(PaletteBitmap resource, GlideAnimation<? super PaletteBitmap> glideAnimation) {
+                            super.onResourceReady(resource, glideAnimation);
+                            final Palette palette = resource.palette;
+                            List<Palette.Swatch> swatches = palette.getSwatches();
 
-                        MathObservable.from(Observable.from(swatches))
-                                .max(new Comparator<Palette.Swatch>() {
-                                    @Override
-                                    public int compare(Palette.Swatch lhs, Palette.Swatch rhs) {
-                                        if (lhs.getPopulation() < rhs.getPopulation()) {
-                                            return -1;
-                                        } else if (lhs.getPopulation() > rhs.getPopulation()) {
-                                            return 1;
+                            MathObservable.from(Observable.from(swatches))
+                                    .max(new Comparator<Palette.Swatch>() {
+                                        @Override
+                                        public int compare(Palette.Swatch lhs, Palette.Swatch rhs) {
+                                            if (lhs.getPopulation() < rhs.getPopulation()) {
+                                                return -1;
+                                            } else if (lhs.getPopulation() > rhs.getPopulation()) {
+                                                return 1;
+                                            }
+                                            return 0;
                                         }
-                                        return 0;
-                                    }
-                                })
-                                .subscribe(new Action1<Palette.Swatch>() {
-                                    @Override
-                                    public void call(Palette.Swatch swatch) {
-                                        int rgb = swatch.getRgb();
-                                        if (Utils.hasLollipop()) {
-                                            RippleApplier.setRipple(swatch, (CardView) vhi.itemView);
-                                        } else {
-                                            int color = ColorUtils.setAlphaComponent(rgb, 0x40);
-                                            StateListDrawable drawable = new StateListDrawable();
-                                            drawable.addState(new int[]{android.R.attr.state_pressed},
-                                                    new ColorDrawable(color));
-                                            ((CardView) vhi.itemView).setForeground(drawable);
+                                    })
+                                    .subscribe(new Action1<Palette.Swatch>() {
+                                        @Override
+                                        public void call(Palette.Swatch swatch) {
+                                            int rgb = swatch.getRgb();
+                                            if (Utils.hasLollipop()) {
+                                                RippleApplier.setRipple(swatch, (CardView) vhi.itemView);
+                                            } else {
+                                                int color = ColorUtils.setAlphaComponent(rgb, 0x40);
+                                                StateListDrawable drawable = new StateListDrawable();
+                                                drawable.addState(new int[]{android.R.attr.state_pressed},
+                                                        new ColorDrawable(color));
+                                                ((CardView) vhi.itemView).setForeground(drawable);
+                                            }
+                                            vhi.title.setTextColor(swatch.getBodyTextColor());
+                                            vhi.category.setTextColor(swatch.getBodyTextColor());
+                                            vhi.captionBackground.setBackgroundColor(rgb);
                                         }
-                                        vhi.title.setTextColor(swatch.getBodyTextColor());
-                                        vhi.category.setTextColor(swatch.getBodyTextColor());
-                                        vhi.captionBackground.setBackgroundColor(rgb);
-                                    }
-                                });
-                    }
-                });
+                                    });
+                        }
+                    });
+                } else {
+                    // TODO: Preview Unavailable
+                }
 
                 vhi.title.setText(art.getTitle());
                 vhi.category.setText(art.getCategory());
@@ -189,6 +195,11 @@ public class ImageGridAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
             return TYPE_PROGRESS;
         }
         return TYPE_ITEM;
+    }
+
+    public void clear() {
+        this.arts.clear();
+        notifyDataSetChanged();
     }
 
     public void setItems(List<Art> arts) {

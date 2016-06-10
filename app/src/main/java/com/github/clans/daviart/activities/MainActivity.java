@@ -12,7 +12,9 @@ import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.text.TextUtils;
+import android.view.Gravity;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.WindowInsets;
 import android.widget.LinearLayout;
 
@@ -24,6 +26,7 @@ import com.github.clans.daviart.adapters.ImageGridAdapter;
 import com.github.clans.daviart.api.DeviantArtApi;
 import com.github.clans.daviart.fragments.NavigationFragment;
 import com.github.clans.daviart.models.Art;
+import com.github.clans.daviart.models.Category;
 import com.github.clans.daviart.models.Credentials;
 import com.github.clans.daviart.models.NewestArts;
 import com.github.clans.daviart.util.EndlessRecyclerViewScrollListener;
@@ -43,7 +46,7 @@ import rx.schedulers.Timestamped;
 import rx.subscriptions.CompositeSubscription;
 import timber.log.Timber;
 
-public class MainActivity extends BaseActivity {
+public class MainActivity extends BaseActivity implements NavigationFragment.OnCategorySelectedListener {
 
     private CompositeSubscription compositeSubscription;
     private RecyclerView recyclerView;
@@ -54,6 +57,9 @@ public class MainActivity extends BaseActivity {
     private AppBarLayout appBar;
     private int numColumns;
     private Gson gson = new Gson();
+    private String categoryPath = "/";
+    private View loading;
+    private NavigationFragment navFragment;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -71,6 +77,10 @@ public class MainActivity extends BaseActivity {
 
         recyclerView = (RecyclerView) findViewById(R.id.recyclerView);
         appBar = (AppBarLayout) findViewById(R.id.appbar);
+        loading = findViewById(R.id.loading_indicator);
+
+        navFragment = (NavigationFragment)
+                getSupportFragmentManager().findFragmentById(R.id.navigation);
 
         if (Utils.hasLollipop()) {
             drawerLayout.setOnApplyWindowInsetsListener(new View.OnApplyWindowInsetsListener() {
@@ -89,8 +99,10 @@ public class MainActivity extends BaseActivity {
                             recyclerView.getPaddingBottom() + insets.getSystemWindowInsetBottom()
                     );
 
-                    NavigationFragment navFragment = (NavigationFragment)
-                            getSupportFragmentManager().findFragmentById(R.id.navigation);
+                    ViewGroup.MarginLayoutParams lp = (ViewGroup.MarginLayoutParams) loading.getLayoutParams();
+                    lp.bottomMargin += insets.getSystemWindowInsetBottom();
+                    loading.setLayoutParams(lp);
+
                     if (navFragment != null) {
                         navFragment.setNavigationViewInsets(insets.getSystemWindowInsetTop(),
                                 insets.getSystemWindowInsetBottom());
@@ -107,7 +119,7 @@ public class MainActivity extends BaseActivity {
         setupRecyclerView();
 
         compositeSubscription = new CompositeSubscription();
-        loadData();
+        loadData(false);
     }
 
     private void setupRecyclerView() {
@@ -128,6 +140,7 @@ public class MainActivity extends BaseActivity {
             @Override
             public void onLoadMore() {
                 Timber.d("onLoadMore()");
+                // TODO: add token refresh functionality
                 Subscription subscription = getNewestArts(newestArts.getNextOffset())
                         .subscribeOn(Schedulers.io())
                         .observeOn(AndroidSchedulers.mainThread())
@@ -136,7 +149,7 @@ public class MainActivity extends BaseActivity {
                             public void onNext(NewestArts newestArts) {
                                 super.onNext(newestArts);
                                 MainActivity.this.newestArts = newestArts;
-                                updateUi();
+                                updateUi(false);
                             }
                         });
 
@@ -145,7 +158,7 @@ public class MainActivity extends BaseActivity {
         });
     }
 
-    private void loadData() {
+    private void loadData(final boolean resetAdapter) {
         Subscription subscription = Observable.just(PreferenceHelper.getCredentials())
                 .timestamp()
                 .map(new Func1<Timestamped<String>, Credentials>() {
@@ -176,7 +189,7 @@ public class MainActivity extends BaseActivity {
                     public void onNext(NewestArts newestArts) {
                         super.onNext(newestArts);
                         MainActivity.this.newestArts = newestArts;
-                        updateUi();
+                        updateUi(resetAdapter);
                     }
                 });
 
@@ -196,24 +209,32 @@ public class MainActivity extends BaseActivity {
                         String credentialsStr = gson.toJson(credentials);
                         PreferenceHelper.setCredentials(credentialsStr);
                         MainActivity.this.credentials = credentials;
+
+                        if (navFragment != null) {
+                            navFragment.loadCategories();
+                        }
                         return getNewestArts(0);
                     }
                 });
     }
 
     private rx.Observable<NewestArts> getNewestArts(int offset) {
-        return DeviantArtApi.getInstance().getNewestArts("/photography/nature/", credentials.getAccessToken(),
+        return DeviantArtApi.getInstance().getNewestArts(categoryPath, credentials.getAccessToken(),
                 20, offset, false);
     }
 
     private boolean checkTokenNotExpired(Credentials credentials, long currentMillis) {
         long credentialsTimestamp = credentials.getTimestamp();
         int expiresIn = credentials.getExpiresIn();
-        return currentMillis - credentialsTimestamp <= expiresIn;
+        return (currentMillis - credentialsTimestamp) / 1000 <= expiresIn;
     }
 
-    private void updateUi() {
+    private void updateUi(boolean resetAdapter) {
         List<Art> arts = newestArts.getArts();
+        if (resetAdapter) {
+            recyclerView.setAdapter(adapter);
+            adapter.clear();
+        }
         adapter.setHasMore(newestArts.hasMore());
         adapter.setItems(arts);
         hideLoadingIndicator();
@@ -232,5 +253,14 @@ public class MainActivity extends BaseActivity {
         } else {
             super.onBackPressed();
         }
+    }
+
+    @Override
+    public void onCategorySelected(Category category) {
+        appBar.setExpanded(true, true);
+        showLoadingIndicator();
+        categoryPath = category.getCatpath();
+        loadData(true);
+        drawerLayout.closeDrawer(GravityCompat.START);
     }
 }

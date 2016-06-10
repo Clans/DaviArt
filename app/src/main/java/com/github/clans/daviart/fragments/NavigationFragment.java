@@ -1,5 +1,6 @@
 package com.github.clans.daviart.fragments;
 
+import android.content.Context;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v7.widget.LinearLayoutManager;
@@ -8,9 +9,6 @@ import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.animation.Animation;
-import android.view.animation.AnimationUtils;
-import android.view.animation.RotateAnimation;
 
 import com.github.clans.daviart.BaseFragment;
 import com.github.clans.daviart.PreferenceHelper;
@@ -21,6 +19,7 @@ import com.github.clans.daviart.models.Category;
 import com.github.clans.daviart.models.CategoryTree;
 import com.github.clans.daviart.models.Credentials;
 import com.github.clans.daviart.util.ObserverImpl;
+import com.github.clans.daviart.util.Utils;
 import com.google.gson.Gson;
 
 import java.util.List;
@@ -38,6 +37,23 @@ public class NavigationFragment extends BaseFragment {
     private RecyclerView recyclerView;
     private Credentials credentials;
     private NavigationAdapter adapter;
+    private OnCategorySelectedListener onCategorySelectedListener;
+
+    public interface OnCategorySelectedListener {
+        void onCategorySelected(Category category);
+    }
+
+    @Override
+    public void onAttach(Context context) {
+        super.onAttach(context);
+
+        try {
+            onCategorySelectedListener = (OnCategorySelectedListener) context;
+        } catch (ClassCastException e) {
+            throw new ClassCastException(context.toString()
+                    + " must implement OnHeadlineSelectedListener");
+        }
+    }
 
     @Nullable
     @Override
@@ -99,8 +115,9 @@ public class NavigationFragment extends BaseFragment {
 
         adapter.setOnItemClickListener(new NavigationAdapter.OnItemClickListener() {
             @Override
-            public void onItemClick(View view, int position) {
-
+            public void onItemClick(NavigationAdapter.ViewHolder holder, Category category) {
+                loadData(holder, category.getCatpath());
+                onCategorySelectedListener.onCategorySelected(category);
             }
         });
     }
@@ -112,6 +129,10 @@ public class NavigationFragment extends BaseFragment {
                 recyclerView.getPaddingRight(),
                 recyclerView.getPaddingBottom() + insetBottom
         );
+    }
+
+    public void loadCategories() {
+        loadData(null, "/");
     }
 
     @Override
