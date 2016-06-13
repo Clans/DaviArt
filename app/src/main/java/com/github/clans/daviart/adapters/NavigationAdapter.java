@@ -104,6 +104,7 @@ public class NavigationAdapter extends RecyclerView.Adapter<NavigationAdapter.Vi
                 @Override
                 public void onClick(View v) {
                     if (onItemClickListener != null) {
+                        // TODO: set the selected state inside the Category object
                         notifyItemChanged(selectedPosition); // update previously selected item
                         selectedPosition = position;
                         prepareForLoadingSubcategories(holder, category);
